@@ -3,7 +3,6 @@ package Backend;
 import Abstract.TestContext;
 import Backend.stepdefinitions.CommonSteps;
 import Backend.stepdefinitions.Okhttp3RestRequests;
-import Backend.stepdefinitions.RestAssuredRequest;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -11,12 +10,10 @@ import java.io.IOException;
 
 public class RestAPISteps {
     private final Okhttp3RestRequests restRequests;
-    private final RestAssuredRequest restAssuredRequests;
     private final CommonSteps commonSteps;
 
     public RestAPISteps(TestContext testContext) {
         this.restRequests = new Okhttp3RestRequests(testContext);
-        this.restAssuredRequests = new RestAssuredRequest(testContext);
         this.commonSteps = new CommonSteps(testContext);
     }
 
@@ -48,11 +45,6 @@ public class RestAPISteps {
     @When("you send GET request with base currency {} and output currencies {}")
     public void testCurrencyConversion(String initialCurrency, String targetCurrencies) throws Exception {
     	restRequests.timeseriesRequest("GET", restRequests.getTodaysDate(), restRequests.getTodaysDate(), initialCurrency, targetCurrencies);
-    }
-
-    @Then("verify sending incorrectly constructed request to the endpoint")
-    public void executeBadRequest() throws Exception{
-    	restAssuredRequests.executeBadRequest(restRequests.getTodaysDate(), restRequests.getTodaysDate());
     }
 
     @Then("request ends with {} response")

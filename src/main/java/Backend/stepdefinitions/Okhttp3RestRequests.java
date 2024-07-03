@@ -30,13 +30,12 @@ import Abstract.ServerConfig;
 import Abstract.TestContext;
 import org.junit.Assert;
 
-public class Okhttp3RestRequests {
-	private static final Logger log = LoggerFactory.getLogger(RestAssuredRequest.class);
-	@Getter(lazy=true) private final String todaysDate = todaysDate();
+public class Okhttp3RestRequests extends CommonSteps {
+	private static final Logger log = LoggerFactory.getLogger(Okhttp3RestRequests.class);
 	private TestContext testContext;
 
 	public Okhttp3RestRequests(TestContext testContext) {
-        this.testContext = testContext;
+        super(testContext);
     }
 
 	public void executeDefaultRequest(String requestType, String startDate, String endDate) throws Exception {
@@ -179,21 +178,5 @@ public class Okhttp3RestRequests {
 			Assert.assertTrue(currencyRates.get(expectedCurrency).toString().matches("(\\d*\\.\\d{1,6})$"));
 		}
 		log.info("Completed validating response against ConvertCurrencyResponse template. All entries are matching monetary value pattern.");
-	}
-	
-	public void logStatus() {
-		log.info("Request response: " + testContext.getResponse().toString());
-		log.info("Request body:\n" + testContext.getJSONBody().trim());
-		Assert.assertNotNull(testContext.getJSONBody());
-	}
-	
-	public void notNullEquals(@NonNull String expectedValue, @NonNull String actualValue) {
-		Assert.assertEquals(expectedValue, actualValue);
-	}
-
-	public String todaysDate() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		Date today = new Date();
-        return dateFormat.format(today);
 	}
 }
