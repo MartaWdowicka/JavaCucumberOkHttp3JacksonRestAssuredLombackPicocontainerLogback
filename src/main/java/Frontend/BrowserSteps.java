@@ -2,20 +2,16 @@ package Frontend;
 
 import java.time.Duration;
 import java.util.NoSuchElementException;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BrowserSteps {
 	public final WebDriver driver;
-    public final static Integer Timeout = 60;
-    private static final Logger consoleLog = LoggerFactory.getLogger(BrowserSteps.class);
+    public final static Integer timeout = 60;
     
     public BrowserSteps() {
         this.driver = BrowserSetup.setUp();
@@ -31,7 +27,7 @@ public class BrowserSteps {
 	
     public static WebElement waitForElement(WebDriver driver, By selector) {
 	    FluentWait<WebDriver> wait = new FluentWait<WebDriver>(driver)
-	            .withTimeout(Duration.ofSeconds(Timeout*100))
+	            .withTimeout(Duration.ofSeconds(timeout * 100))
 	            .pollingEvery(Duration.ofSeconds(1))
 	            .ignoring(NoSuchElementException.class);
 	    WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(selector));
@@ -40,7 +36,7 @@ public class BrowserSteps {
     
     public static void waitForElementToDissapear(WebDriver driver, By selector) {
 	    FluentWait<WebDriver> wait = new FluentWait<WebDriver>(driver)
-	            .withTimeout(Duration.ofSeconds(Timeout*100))
+	            .withTimeout(Duration.ofSeconds(timeout * 100))
 	            .pollingEvery(Duration.ofSeconds(1))
 	            .ignoring(NoSuchElementException.class);
 	    wait.until(ExpectedConditions.invisibilityOf(driver.findElement(selector)));

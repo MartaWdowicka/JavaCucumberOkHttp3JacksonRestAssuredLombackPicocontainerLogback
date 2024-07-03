@@ -3,16 +3,19 @@ package Backend;
 import Abstract.TestContext;
 import Backend.stepdefinitions.CommonSteps;
 import Backend.stepdefinitions.Okhttp3RestRequests;
+import Backend.stepdefinitions.RestAssuredRequests;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.io.IOException;
 
 public class RestAPISteps {
+    private final RestAssuredRequests restAssuredRequests;
     private final Okhttp3RestRequests restRequests;
     private final CommonSteps commonSteps;
 
     public RestAPISteps(TestContext testContext) {
+        this.restAssuredRequests = new RestAssuredRequests(testContext);
         this.restRequests = new Okhttp3RestRequests(testContext);
         this.commonSteps = new CommonSteps(testContext);
     }
@@ -60,5 +63,10 @@ public class RestAPISteps {
     @Then("compare response to saved expected response template")
     public void verifyCurrencyResponseTemplate() throws Exception {
     	restRequests.verifyCurrencyResponseTemplate();
+    }
+
+    @Then("verify sending incorrectly constructed request to the endpoint")
+    public void executeBadRequest() throws Exception{
+    	restAssuredRequests.executeBadRequest(restRequests.getTodaysDate(), restRequests.getTodaysDate());
     }
 }
