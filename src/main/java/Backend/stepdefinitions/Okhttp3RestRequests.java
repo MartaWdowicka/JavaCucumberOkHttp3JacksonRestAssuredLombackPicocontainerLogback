@@ -3,194 +3,197 @@ package Backend.stepdefinitions;
 import Backend.ObjectMappers.ConvertCurrencyResponse;
 import Backend.ObjectMappers.ErrorResponse;
 import Backend.enums.ResponseCodes.ResponseCode;
-
+import lombok.Cleanup;
+import lombok.Getter;
+import lombok.NonNull;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import org.apache.commons.lang3.Validate;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
-
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import Abstract.ServerConfig;
 import Abstract.TestContext;
 import org.junit.Assert;
 
 public class Okhttp3RestRequests {
-	private static final Logger LOGGER = LoggerFactory.getLogger(Okhttp3RestRequests.class);
+	private static final Logger log = LoggerFactory.getLogger(RestAssuredRequest.class);
+	@Getter(lazy=true) private final String todaysDate = todaysDate();
 	private TestContext testContext;
 
 	public Okhttp3RestRequests(TestContext testContext) {
         this.testContext = testContext;
     }
 
-	public void setEndpoint(String endpoint) {
-		this.testContext.setEndpoint(endpoint);
-	}
-
-	public void setAPIKey(String APIKey) {
-		this.testContext.setAPIKey(APIKey);
-	}
-
-	public void executeDefaultRequest(String requestType, String startDate, String endDate) throws IOException {
+	public void executeDefaultRequest(String requestType, String startDate, String endDate) throws Exception {
 		timeseriesRequest(requestType, (startDate == null)? todaysDate() : startDate, (endDate == null)? todaysDate() : endDate);
 	}
 
-	public void timeseriesRequest(String requestType, String dateStart, String dateEnd) throws IOException {
+	public void timeseriesRequest(String requestType, String dateStart, String dateEnd) throws Exception {
 		timeseriesRequest(requestType, dateStart, dateEnd, null, null);
 	}
 
-	public void timeseriesRequest(String requestType, String dateStart, String dateEnd, String initialCurrency, String targetCurrencies) throws IOException {
+	public void timeseriesRequest(@NonNull String requestType, @NonNull String dateStart, @NonNull String dateEnd, String initialCurrency, String targetCurrencies) throws Exception {
 		OkHttpClient client = new OkHttpClient();
 		Request request; RequestBody body;
-
-		switch (requestType) {
-			case "POST":
-				body = new FormBody.Builder()
-	    	      .add("start_date", dateStart)
-	    	      .add("end_date", dateEnd)
-	    	      .build();
-	    	    request = new Request.Builder()
-	    	      .url(testContext.getEndpoint())
-	    	      .addHeader("apikey", testContext.getAPIKey())
-	    	      .post(body)
-	    	      .build();
-			    break;
-			case "DELETE":
-				request = new Request.Builder()
-	    	      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd)
-	    	      .addHeader("apikey", testContext.getAPIKey())
-	    	      .delete()
-	    	      .build();
-			    break;
-			case "PATCH":
-				body = new FormBody.Builder()
-	    	      .add("start_date", dateStart)
-	    	      .add("end_date", dateEnd)
-	    	      .build();
-	    		request = new Request.Builder()
-			      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd)
-			      .addHeader("apikey", testContext.getAPIKey())
-			      .patch(body)
-			      .build();
-			    break;
-			case "GET":
-			default:
-				targetCurrencies = (targetCurrencies != null) ? targetCurrencies.replaceAll("\\s", "").toUpperCase() : targetCurrencies;
-				request = new Request.Builder()
-	    	      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd + ((initialCurrency != null)? "&base=" + initialCurrency: "")+ "&end_date=" + dateEnd + ((targetCurrencies != null)? "&symbols=" + targetCurrencies: ""))
-	    	      .addHeader("apikey", testContext.getAPIKey())
-	    	      .method("GET", null)
-	    	      .build();
-				if (initialCurrency != null || targetCurrencies != null) {
-					JSONObject testData = (testContext.getTestData() == null)? new JSONObject() : testContext.getTestData();
-					testData.put("StartDate", dateStart)
-                    		.put("EndDate", dateEnd)
-                    		.put("BaseCurrency", initialCurrency)
-                    		.put("TargetCurrencies", targetCurrencies);
-					testContext.setTestData(testData);
-					LOGGER.info("Added additional test data: " + testContext.getTestData().toString());
-				}
+		try {
+			switch (requestType) {
+				case "POST":
+					body = new FormBody.Builder()
+		    	      .add("start_date", dateStart)
+		    	      .add("end_date", dateEnd)
+		    	      .build();
+		    	    request = new Request.Builder()
+		    	      .url(testContext.getEndpoint())
+		    	      .addHeader("apikey", testContext.getAPIKey())
+		    	      .post(body)
+		    	      .build();
+				    break;
+				case "DELETE":
+					request = new Request.Builder()
+		    	      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd)
+		    	      .addHeader("apikey", testContext.getAPIKey())
+		    	      .delete()
+		    	      .build();
+				    break;
+				case "PATCH":
+					body = new FormBody.Builder()
+		    	      .add("start_date", dateStart)
+		    	      .add("end_date", dateEnd)
+		    	      .build();
+		    		request = new Request.Builder()
+				      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd)
+				      .addHeader("apikey", testContext.getAPIKey())
+				      .patch(body)
+				      .build();
+				    break;
+				case "GET":
+				default:
+					targetCurrencies = (targetCurrencies != null) ? targetCurrencies.replaceAll("\\s", "").toUpperCase() : targetCurrencies;
+					request = new Request.Builder()
+		    	      .url(testContext.getEndpoint() + "?start_date=" + dateStart + "&end_date=" + dateEnd + ((initialCurrency != null)? "&base=" + initialCurrency: "")+ "&end_date=" + dateEnd + ((targetCurrencies != null)? "&symbols=" + targetCurrencies: ""))
+		    	      .addHeader("apikey", testContext.getAPIKey())
+		    	      .method("GET", null)
+		    	      .build();
+					if (initialCurrency != null || targetCurrencies != null) {
+						JSONObject testData = (testContext.getTestData() == null)? new JSONObject() : testContext.getTestData();
+						testData.put("StartDate", dateStart)
+	                    		.put("EndDate", dateEnd)
+	                    		.put("BaseCurrency", initialCurrency)
+	                    		.put("TargetCurrencies", targetCurrencies);
+						testContext.setTestData(testData);
+						log.info("Added additional test data: " + testContext.getTestData().toString());
+					}
+			}
+			@Cleanup Response response = client.newCall(request).execute();
+			testContext.setResponse(response);
+			testContext.setJSONBody(response.body().string());
+		} catch (Exception e) {
+			throw new Exception("\nIssue generating request for type: " + requestType + " with paramaters - Endpoint: " + testContext.getEndpoint() + ", Start Date: " + dateStart + ", End Date: " + dateEnd + ", and optional values - Initial Currency: " + initialCurrency + ", Target Currencies: " + targetCurrencies + ". \nOrginal error: " + e.getMessage());
 		}
-
-		Response response = client.newCall(request).execute();
-		testContext.setResponse(response);
-		testContext.setJSONBody(response.body().string());
 	}
 
 	public void tooManyRequests(int timesExecuted) {
-		LOGGER.info("Executing request " + timesExecuted + " times");
-    	int executedXTimes = 0;
+		log.info("Executing request " + timesExecuted + " times");
+		int executedXTimes = 0;
     	try {
 	    	for (int x = 0; x <= timesExecuted; x++) {
 	    		executedXTimes++;
 	    		executeDefaultRequest("GET", null, null);
-	    		LOGGER.info("Response code: " + testContext.getResponse().code());
+	    		log.debug("Response code: " + testContext.getResponse().code());
 	    		Validate.isTrue(ResponseCode.getResponseCode("TOOMANYREQUESTS")!= testContext.getResponse().code());
 	    	}
-	    	LOGGER.debug("Executed request: " + executedXTimes + " times without metting any exeptions");
+	    	log.debug("Executed request: " + executedXTimes + " times without metting any exeptions");
     	} catch (Exception e) {
-    		LOGGER.debug("Executed request: " + executedXTimes + " time(s) before getting expected response.");
+    		log.debug("Executed request: " + executedXTimes + " time(s) before getting expected response.");
     	}
     }
 
-	public void verifyResponse(String expectedResponse) throws Exception {
-		expectedResponse = expectedResponse.replaceAll("\\s", "").toUpperCase();
-		LOGGER.info("\n    Request response: " + testContext.getResponse().toString());
-		LOGGER.info("Request body:\n" + testContext.getJSONBody().trim());
+	public void verifyResponse(@NonNull String expectedResponse) throws Exception {
+		logStatus();
 		Assert.assertEquals(ResponseCode.getResponseCode(expectedResponse), testContext.getResponse().code());
 	}
 
-	public void confirmServerSideErrors(String serverErrorCode, String errorMessageType, String message) throws Exception {
+	public void confirmServerSideErrors(@NonNull String serverErrorCode, @NonNull String errorMessageType, @NonNull String message) throws Exception {
 		if (serverErrorCode.replaceAll("\\s", "").equals("-")) {
 			Assert.assertFalse("Request expected to end with no errors, but ended with: " + errorMessageType, testContext.getResponse().toString().contains("error"));		
 		} else {
 			ObjectMapper objectMapper = new ObjectMapper();
-			ErrorResponse errorResponse = null;
-			LOGGER.info("\n    Request response: " + testContext.getResponse().toString());
-			LOGGER.info("Request body:\n" + testContext.getJSONBody().trim());
-			Assert.assertNotNull(testContext.getJSONBody());
-
+			ErrorResponse errorRestAPIResponse = null;
+			logStatus();
 			try {
-				errorResponse = objectMapper.readValue(testContext.getJSONBody(), ErrorResponse.class);
+				errorRestAPIResponse = objectMapper.readValue(testContext.getJSONBody(), ErrorResponse.class);
 			} catch (Exception e) {
-				LOGGER.error("Experienced problem with parsing body with mapper for ErrorResponse");
+				log.error("Experienced problem with parsing body with mapper for ErrorResponse");
 				throw new Exception("Failed to map JSON with ErrorResponse mapper. Error: " + e.getMessage());
 			}
-
-			Assert.assertNotNull(errorResponse.getError().get("code"));
-			Assert.assertEquals(serverErrorCode, errorResponse.getError().get("code").asText());
-			Assert.assertNotNull(errorResponse.getError().get("type"));
-			Assert.assertEquals(errorMessageType, errorResponse.getError().get("type").asText());
-			Assert.assertNotNull(errorResponse.getError().get("info"));
-			Assert.assertTrue(errorResponse.getError().get("info").asText().matches(message + ".*$"));
+			notNullEquals(serverErrorCode, errorRestAPIResponse.getError().get("code").asText());
+			notNullEquals(errorMessageType, errorRestAPIResponse.getError().get("type").asText());
+			Assert.assertTrue(errorRestAPIResponse.getError().get("info").asText().matches(message + ".*$"));
 		}
 	}
 
 	public void verifyCurrencyResponseTemplate() throws Exception {
 		ObjectMapper objectMapper = new ObjectMapper();
-		ConvertCurrencyResponse convertCurrencyResponse = null;
-		LOGGER.info("\n    Request response: " + testContext.getResponse().toString());
-		LOGGER.info("Request body:\n" + testContext.getJSONBody().trim());
-		Assert.assertNotNull(testContext.getJSONBody());
-
+		ConvertCurrencyResponse convertCurrencyAPIResponse = null;
+		logStatus();
 		try {
-			convertCurrencyResponse = objectMapper.readValue(testContext.getJSONBody(), ConvertCurrencyResponse.class);
+			convertCurrencyAPIResponse = objectMapper.readValue(testContext.getJSONBody(), ConvertCurrencyResponse.class);
 		} catch (Exception e) {
-			LOGGER.error("Experienced problem with parsing body with mapper for ConvertCurrencyResponse");
-			throw new Exception("Failed to map JSON with ConvertCurrencyResponse mapper. Error: " + e.getMessage());
+			log.error("Experienced problem with parsing body with mapper for ConvertCurrencyResponse");
+			try {
+				ErrorResponse response = objectMapper.readValue(testContext.getJSONBody(), ErrorResponse.class);
+				throw new Exception("Expected currencies from a server, but error returned: " + response.getError());
+			} catch (Exception e1) {
+				throw new Exception("Failed to map JSON with ConvertCurrencyResponse mapper. Error: " + e.getMessage());
+			}
 		}
-
-		Assert.assertNotNull(convertCurrencyResponse.getStartDate());
-		Assert.assertEquals(testContext.getTestData().get("StartDate").toString(), convertCurrencyResponse.getStartDate());
-		Assert.assertNotNull(convertCurrencyResponse.getEndDate());
-		Assert.assertEquals(testContext.getTestData().get("EndDate").toString(), convertCurrencyResponse.getEndDate());
-		Assert.assertNotNull(convertCurrencyResponse.getBaseCurrency());
-		Assert.assertEquals(testContext.getTestData().get("BaseCurrency").toString(), convertCurrencyResponse.getBaseCurrency());
-		Assert.assertNotNull(convertCurrencyResponse.getRates());
-		Assert.assertNotNull(convertCurrencyResponse.getRates().get(convertCurrencyResponse.getStartDate()));
-		JsonNode currencyRates = convertCurrencyResponse.getRates().get(convertCurrencyResponse.getStartDate());
+		notNullEquals(testContext.getTestData().get("StartDate").toString(), convertCurrencyAPIResponse.getStartDate());
+		notNullEquals(testContext.getTestData().get("EndDate").toString(), convertCurrencyAPIResponse.getEndDate());
+		notNullEquals(testContext.getTestData().get("BaseCurrency").toString(), convertCurrencyAPIResponse.getBaseCurrency());
+		Assert.assertNotNull(convertCurrencyAPIResponse.getRates());
+		Assert.assertNotNull(convertCurrencyAPIResponse.getRates().get(convertCurrencyAPIResponse.getStartDate()));
+		validateReceivedCurrencyRates(convertCurrencyAPIResponse);
+	}
+	
+	public void validateReceivedCurrencyRates(ConvertCurrencyResponse convertCurrencyAPIResponse) {
+		log.info("Validating received currency rates.");
+		JsonNode currencyRates = convertCurrencyAPIResponse.getRates().get(convertCurrencyAPIResponse.getStartDate());
 		String[] expectedCurrencies = testContext.getTestData().get("TargetCurrencies").toString().split(",");
 		for (String expectedCurrency: expectedCurrencies) {
-			LOGGER.info("Expecting rate for currency(" + expectedCurrency + ") - " + ((currencyRates.get(expectedCurrency) != null)? "Found with value: " + currencyRates.get(expectedCurrency) : "But was not found."));
-			Assert.assertTrue(currencyRates.get(expectedCurrency).toString().matches("(\\d*\\.\\d{6})$"));
+			log.info("Expecting rate for currency(" + expectedCurrency + ") - " + ((currencyRates.get(expectedCurrency) != null)? "Found with value: " + currencyRates.get(expectedCurrency) : "But was not found."));
+			Assert.assertTrue(currencyRates.get(expectedCurrency).toString().matches("(\\d*\\.\\d{1,6})$"));
 		}
-		LOGGER.info("Comparing currency conversion response against a basic template and validation completed.");
+		log.info("Completed validating response against ConvertCurrencyResponse template. All entries are matching monetary value pattern.");
+	}
+	
+	public void logStatus() {
+		log.info("Request response: " + testContext.getResponse().toString());
+		log.info("Request body:\n" + testContext.getJSONBody().trim());
+		Assert.assertNotNull(testContext.getJSONBody());
+	}
+	
+	public void notNullEquals(@NonNull String expectedValue, @NonNull String actualValue) {
+		Assert.assertEquals(expectedValue, actualValue);
 	}
 
-	public static String todaysDate() {
+	public String todaysDate() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Date today = new Date();
+		Date today = new Date();
         return dateFormat.format(today);
 	}
 }

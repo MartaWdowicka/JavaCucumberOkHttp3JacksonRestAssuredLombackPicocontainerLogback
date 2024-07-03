@@ -1,7 +1,0 @@
- This is just a list of APIKeys
- 
- Examples:
-    | APIName    | APIKey                           | Comment                                       |
-    | timeseries | ziG0sPexcVxJ8QCDGGuNu4LdrZf4wN4s | Primary option, allows 100 requests a month   |
-	| timeseries | xXWna4w5rPHDqbI2Xvf22eHRB7vD0QQO | Secondary option, allows 100 requests a month |
-	| timeseries | VgQALyF8csABwGsJIL7GSVFzPMopMYK7 | Will be exhaused after running test @429      |

@@ -6,6 +6,7 @@ import io.cucumber.java.Scenario;
 import Abstract.TestContext;
 import Frontend.BrowserSetup;
 
+@SuppressWarnings("unused")
 public class CucumberHooks {
     private final TestContext testContext;
 

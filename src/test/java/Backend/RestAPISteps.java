@@ -1,6 +1,7 @@
 package Backend;
 
 import Abstract.TestContext;
+import Backend.stepdefinitions.CommonSteps;
 import Backend.stepdefinitions.Okhttp3RestRequests;
 import Backend.stepdefinitions.RestAssuredRequest;
 import io.cucumber.java.en.Given;
@@ -11,20 +12,22 @@ import java.io.IOException;
 public class RestAPISteps {
     private final Okhttp3RestRequests restRequests;
     private final RestAssuredRequest restAssuredRequests;
+    private final CommonSteps commonSteps;
 
     public RestAPISteps(TestContext testContext) {
         this.restRequests = new Okhttp3RestRequests(testContext);
         this.restAssuredRequests = new RestAssuredRequest(testContext);
+        this.commonSteps = new CommonSteps(testContext);
     }
 
     @Given("the API endpoint is {}")
     public void setAPIEndpoint(String endpoint) {
-    	restRequests.setEndpoint(endpoint);
+    	commonSteps.setEndpoint(endpoint);
     }
 
     @Given("the APIKey is {}")
     public void setAPIKey(String APIKey) {
-    	restRequests.setAPIKey(APIKey);
+    	commonSteps.setAPIKey(APIKey);
     }
 
     @When("you send a basic {} request to the endpoint")
@@ -38,18 +41,18 @@ public class RestAPISteps {
     }
 
     @When("you send a basic GET request to the endpoint with start date {} and end date {}")
-    public void smokeTest(String startDate, String endDate) throws IOException {
+    public void smokeTest(String startDate, String endDate) throws Exception {
     	restRequests.timeseriesRequest("GET", startDate, endDate);
     }
 
-    @When("you send GET request with input {} and expected output {}")
-    public void testCurrencyConversion(String initialCurrency, String targetCurrencies) throws IOException {
-    	restRequests.timeseriesRequest("GET", Okhttp3RestRequests.todaysDate(), Okhttp3RestRequests.todaysDate(), initialCurrency, targetCurrencies);
+    @When("you send GET request with base currency {} and output currencies {}")
+    public void testCurrencyConversion(String initialCurrency, String targetCurrencies) throws Exception {
+    	restRequests.timeseriesRequest("GET", restRequests.getTodaysDate(), restRequests.getTodaysDate(), initialCurrency, targetCurrencies);
     }
 
     @Then("verify sending incorrectly constructed request to the endpoint")
     public void executeBadRequest() throws Exception{
-    	restAssuredRequests.executeBadRequest();
+    	restAssuredRequests.executeBadRequest(restRequests.getTodaysDate(), restRequests.getTodaysDate());
     }
 
     @Then("request ends with {} response")
@@ -62,7 +65,7 @@ public class RestAPISteps {
     	restRequests.confirmServerSideErrors(serverErrorCode, errorMessageType, message);
     }
 
-    @Then("compare response to expected response template")
+    @Then("compare response to saved expected response template")
     public void verifyCurrencyResponseTemplate() throws Exception {
     	restRequests.verifyCurrencyResponseTemplate();
     }

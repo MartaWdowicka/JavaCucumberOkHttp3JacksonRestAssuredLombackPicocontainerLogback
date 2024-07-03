@@ -1,6 +1,7 @@
 package Backend.enums;
 
 import lombok.Getter;
+import lombok.var;
 
 public class ResponseCodes {
     public enum ResponseCode {
@@ -18,7 +19,8 @@ public class ResponseCodes {
     	@Getter private final int value;
 
     	public static int getResponseCode(String key) throws Exception {
-    		for (ResponseCode enumEntry : ResponseCode.class.getEnumConstants()) {
+    		key = key.replaceAll("\\s", "").toUpperCase();
+    		for (var enumEntry : ResponseCode.class.getEnumConstants()) {
     			if (enumEntry.name().equals(key)) {
     				return enumEntry.value;
     			}
